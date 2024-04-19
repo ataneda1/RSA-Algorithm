@@ -1,0 +1,12 @@
+All: ProjectRSA3 cpubexp
+LIB=libConversions4.s
+CC=gcc
+
+ProjectRSA3: ProjectRSA3.o $(LIB)
+		$(CC) $@.o $(LIB) -g -o $@
+
+cpubexp: cpubexp.o $(LIB)
+		$(CC) $@.o $(LIB) -g -o $@
+
+.s.o:
+		$(CC) $(@:.o=.s) -g -c -o $@

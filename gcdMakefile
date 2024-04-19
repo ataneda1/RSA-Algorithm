@@ -1,0 +1,12 @@
+All: ProjectRSA3 gcd
+LIB=libConversions4.s
+CC=gcc
+
+ProjectRSA3: ProjectRSA3.o $(LIB)
+		$(CC) $@.o $(LIB) -g -o $@
+
+gcd: gcd.o $(LIB)
+		$(CC) $@.o $(LIB) -g -o $@
+
+.s.o:
+		$(CC) $(@:.o=.s) -g -c -o $@
