@@ -2,7 +2,7 @@
 #Program name: RsaLib.s
 #Author: Kbrom Ghirmai
 #Date: 03/23/2024
-#Purpose: To hold a library of conversion programs
+#Purpose: To hold a library of functions needed to implement the RSA algorithm
 #Functions:mainProg, gcd,pow,modulo,cpubexp,cprivexp,encrypt,decrypt
 #
 
@@ -182,9 +182,22 @@ modulo:
 #Get remainder of dividing to numbers
  MOV r0,r4
  MOV r1,r5
+ #deal with a value dididng by the same value
+ CMP r4,r5
+ BEQ setRemainder
+  B contDiv
+
+ setRemainder:
+ MOV r3,#0
+ MOV r0,r3
+ B EndModulo
+
+ contDiv:
+ CMP r4,r5
  BL __aeabi_idiv
  MOV r0,r3
 
+EndModulo:
 #Pop to Stack
  LDR lr, [sp, #0]
  ADD sp, sp, #4
@@ -287,8 +300,8 @@ CPrivExp:
 #r4-Hold the value of p that the user chooses
 #r5-holds the value of user input q
 #r6-holds the totient that is calculated using input p and q
-#r7-Hold user input integer for x in the eq for calculating d
-#r8-Hold user input public exponent value
+#r7-Hold user input private exponent d
+#r8-Hold user input public exponent value e
 
 #Push to stack
  SUB sp, sp, #4
@@ -300,22 +313,73 @@ CPrivExp:
  SUB r5,r5,#1
  MUL r6,r4,r5
 
-#Calculate private key exponent (d)
-#Simplified eq for calculating d (d=1+x*phi(n))/e
- MOV r10,#0
- MUL r10,r6,r7
- ADD r10,r10,#1
- MOV r0,r10
- MOV r1,r8
- BL __aeabi_idiv
- #resulting priv exp will be in r0 
+#Check that input d passes the proof:de=1(mod phi(n))==> modulo(de-1,phi(n))=0
+#Start by checking input d is less than the totien phi(n)
+CheckPrivExpLoop:
+ CMP r7,r6
+ BGE PrivExpErr
+  B StartCheckPrivExp
 
+ PrivExpErr:
+ #Print error message when input d is greater than totient
+ LDR r0,=privErr
+ BL printf
+ #Get user to input another d value and check that new input
+ LDR r0,=promptd
+ BL printf
+ LDR r0,=formatd
+ LDR r1,=numd
+ BL scanf
+ LDR r7,=numd
+ LDR r7,[r7]
+ B CheckPrivExpLoop
+
+ StartCheckPrivExp:
+ #check modulo(de-1,phi(n))=0
+ MOV r9,#1
+ #d*e
+ MUL r9,r7,r8
+ #de-1
+ SUB r9,r9,#1
+ MOV r4,r9
+ MOV r5,r6
+ #modulo(de-1,phi(n))
+ BL modulo
+ CMP r3,#0
+ BNE PrivErr2
+  B EndCheckPrivExpLoop
+ 
+ PrivErr2:
+ LDR r0,=privExpErr2
+ BL printf
+ LDR r0, =promptd
+ BL printf
+ LDR r0, =formatd
+ LDR r1, =numd
+ BL scanf
+ LDR r7, =numd
+ LDR r7, [r7]
+ B CheckPrivExpLoop
+
+ EndCheckPrivExpLoop:
+ LDR r0,=testval
+ BL printf
+ B EndPrivExp
+
+EndPrivExp:
 #Pop from OS Stack
  LDR lr, [sp, #0]
  ADD sp, sp, #4
  MOV pc, lr
 
 .data
+
+privErr: .asciz "That d value is invalid because it's  greater the totient(%d), please input a value that is less than that..."
+promptd: .asciz "Please input a private key exponent d value: "
+formatd: .asciz "%d"
+numd: .word 0
+privExpErr2: .asciz "That d value is invalid please try inputting another d value..."
+testval: .asciz "Congrats is the valid d value\n"
 #End of CPrivExp
 
 #Function Name:Encrypt
@@ -397,6 +461,9 @@ Decrypt:
 #Convert number to ascii string
  LDR r4,=InputAscii
  LDR r4,[r4]
+ MOV r5,r8
+ BL pow
+ MOV r4,r6
  MOV r5,r11
  BL pow
  MOV r4,r6
