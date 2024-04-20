@@ -38,7 +38,7 @@ main:
 
  #Implement gcd function
   BL modulo
- 
+  
  #Print result
   MOV r1,r0
   LDR r0, =Output
@@ -52,8 +52,8 @@ main:
 .data
 Prompt1: .asciz "Enter the first number for the modulo calculation: "
 format1: .asciz "%d"
-Input1: .word 0
+Input1: .word 0,0
 Prompt2: .asciz "Enter the second output for the modulo calculation: "
 format2: .asciz "%d"
-Input2: .word 0
-Output: .asciz "The greatest common divisor is: %d\n " 
+Input2: .word 0,0
+Output: .asciz "The remainder of dividing those two values is: %d\n " 
