@@ -40,7 +40,7 @@ main:
   BL modulo
   
  #Print result
-  MOV r1,r0
+  MOV r1,r3
   LDR r0, =Output
   BL printf 
 

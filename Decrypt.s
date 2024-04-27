@@ -16,6 +16,8 @@ main:
  STR lr, [sp, #0]
 
 #Implement decrypt method
+ MOV r7,#29
+ MOV r10,#91
  BL Decrypt
 
 #Pop from OS Stack

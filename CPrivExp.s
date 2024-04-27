@@ -1,8 +1,8 @@
 #
-#Program Name:gcd.s
-#Author:Kbrom Ghirmai
+#Program Name:CPrivExp.s
+#Author:Anthony Taneda
 #Date:3/27/24
-#Purpose: Find the greatest common divisor between two inputs
+#Purpose: Test the RsaLib function that calcualtes the private exponent d
 #
 
 .text
@@ -34,29 +34,21 @@ main:
  LDR r5,=numQ
  LDR r5,[r5]
 
- #Calculate Totient and put it in r6 for use in CPrivExp
- MOV r3,#0
- SUB r3,r4,#1
- MOV r2,#0
- SUB r2,r5,#1
- MOV r9,#0
- MUL r9,r2,r3
- MOV r6,r9
-
  #Pick public Exp for test 
- MOV r8,#3
+  MOV r8,#5
 
- #Pick integer x value for test
- MOV r7,#2
- 
- #Implement gcd function
+ #Prompt for private exponent d and read value
+  LDR r0,=promptD
+  BL printf
+  LDR r0,=formatD
+  LDR r1,=inputD
+  BL scanf
+
+ #Put input d in r7 and implement CPrivExp
+  LDR r7,=inputD
+  LDR r7,[r7]  
   BL CPrivExp
  
- #Print result
-  MOV r1,r0
-  LDR r0, =Output
-  BL printf 
-
  #Pop to Stack
   LDR lr, [sp, #0]
   ADD sp, sp, #4
@@ -69,5 +61,6 @@ numP: .word 0
 PromptQ: .asciz "Input a positive prime number that is less than 50 for (q): "
 formatQ: .asciz "%d"
 numQ: .word 0
-Output: .asciz "Your private exponent based on all the inputs is: %d\n"
-
+promptD: .asciz "Please input a private key exponent d greater than 0: "
+formatD: .asciz "%d"
+inputD: .word 0

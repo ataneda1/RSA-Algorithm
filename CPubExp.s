@@ -2,7 +2,7 @@
 #Program Name: CPubExp.s
 #Author:Kbrom Ghirmai,Anthony Taneda,Muhammad Qazi
 #Date: 04/04/2024
-#Purpose: Implement CPubExp function to check if input public exponent is valid
+#Purpose: Implement CPubExp function to check if CPubExp function worked in the beginning
 #
 
 .text
@@ -34,6 +34,7 @@ main:
  LDR r5,=qval
  LDR r5,[r5]
 
+InputPublicExp:
 #Prompt for public exponent
  LDR r0, =prompt3
  BL printf
@@ -46,16 +47,21 @@ main:
  LDR r6,[r6]
  
 #Implement cpuexp function
+ MOV r10,#0
  BL CPubExp
+ CMP r10,#1
+ BEQ EndPubExpChk
+  B InputPublicExp
 
+EndPubExpChk:
 #Pop to Stack
  LDR lr, [sp, #0]
  ADD sp, sp, #4
  MOV pc, lr
   
 .data
-prompt1: .asciz "Enter a p value that is greater than 0 and less than 50: "
-prompt2: .asciz "Enter a q value that is greater than 0 and less than 50: "
+prompt1: .asciz "Enter a prime number for p that is greater than 0 and less than 50: "
+prompt2: .asciz "Enter a prime number for q that is greater than 0 and less than 50: "
 prompt3: .asciz "Enter a public key exponent value that's greater than 1: "
 format1: .asciz "%d" 
 format2: .asciz "%d"

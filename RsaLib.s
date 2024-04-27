@@ -173,7 +173,16 @@ MOV r6,#1
 .global modulo
 .text
 
+#
+#Register Dictionary
+#r4-Input dividend value that will be moved into r0 for division
+#r5-Input divisor value that will be moved into r1 for division
+#r3-Holds the remainder after the division
+#r0-Will hold the result at the end of the program
+#
+
 modulo:
+
 #Push to stack
  SUB sp, sp, #4
  STR lr, [sp, #0]
@@ -205,7 +214,6 @@ EndModulo:
 
 .data
 #End of modulo
-
 
 #Function Name:cpubexp
 #Purpose: Take user input public key exponent and confirm it is valid
@@ -387,12 +395,25 @@ testval: .asciz "Congrats is the valid d value\n"
 .global Encrypt
 .text
 
+#Register Dictionary
+#r2-register that holds the ascii value current byte from input message
+#r9-safe register that holds the input message 
+#r4-holds values that are passed into exponentiation (pow) function and modulo function
+#r5-holds values that are passed into exponentiation (pow) function and modulo function
+#r8-holds the value public exponent
+
 Encrypt:
 
 #Push to stack
  SUB sp, sp, #4
  STR lr, [sp, #0]
- 
+
+ #Open the file
+ LDR r0, =filename  // Load the address of filename into r0
+ LDR r1,=filemode     
+ BL fopen            // Call open function
+ MOV r11,r0
+
 #Prompt for input string and read the string
  LDR r0,=prompt1
  BL printf
@@ -413,88 +434,175 @@ StartAsciiLoop:
  BNE PrintAscii
   B EndAsciiLoop
    
-PrintAscii:
-#Print Ascii Value
+PrintAscii:        
+#Calculate and print Encrypted Ciphertext Value (c) for each byte of message
+#c=(m^e) mod n
  MOV r4,r2
  MOV r5,r8
  BL pow
  MOV r4,r6
  MOV r5,r10
  BL modulo
- MOV r1,r3
- LDR r0,=output
- BL printf 
+ MOV r7,r3 
+ 
+ #Write to file 
+ MOV r0,r11
+ MOV r11,r0   
+ LDR r2,=Msg
+ MOV r2,r7
+ LDR r1,=Output
+ BL fprintf
  B StartAsciiLoop
 
 EndAsciiLoop:
+ MOV r0,r11
+ BL fclose 
 #Pop to Stack
  LDR lr, [sp, #0]
  ADD sp, sp, #4
  MOV pc, lr
  
 .data
-prompt1: .asciz "Please type in the message that you want to encrypt: "
-format1: .asciz "%s"
-Msg: .space 100                 
-output: .asciz "%d "
-
+prompt1:  .asciz "Please type in the message that you want to encrypt: "
+format1:  .asciz "%s"
+Msg:      .space 100
+Output: .asciz " %d "
+filemode: .asciz "w"
+filename:   .asciz  "Encrypted.txt"
 #End of Encrypt 
 
+
 #Function Name:Decrypt
-#Purpose: Check if input is an alphabetic character and return logical variable as an indicator(1=true,0=false)
+#Purpose: Take an input encrypted numerical ciphertext value and use binary exponentiation algorithm to get m (plaintext character
 
 .global Decrypt
 .text
+
+#Register Dictionary
+#r4-Used to hold dividend prior to calling modulo function
+#r5-Used to hold divisor prior to calling modulo function
+#r6-Holds input encrypted ciphertext value (c) 
+#r7-Holds encrypted private exponent d that is manipulate in binary exponentiation
+#r9-Holds resulting plaintext ascii value that the decrypted character (m) is equal to
+#r10-Holds value of n(n=p*q) which is needed for finding the plaintext value m
+#r11-Holds initial private exponent value d (just so original d value is preserved) 
 
 Decrypt:
 #Push to stack
  SUB sp, sp, #4
  STR lr, [sp, #0]
 
-#Prompt user to input valid ascii value for a character
- LDR r0,=promptA
+#Prompt user to input encrypted ciphertext value (c) for decryption
+ LDR r0,=promptC
  BL printf
- LDR r0,=formatA
- LDR r1,=InputAscii
+ LDR r0,=formatC
+ LDR r1,=InputC
  BL scanf
 
-#Convert number to ascii string
- LDR r4,=InputAscii
- LDR r4,[r4]
- MOV r5,r8
- BL pow
- MOV r4,r6
- MOV r5,r11
- BL pow
+#Put ciphertext value c in r6 for decryption alg
+ LDR r6,=InputC
+ LDR r6,[r6] 
+ 
+#Initialize values for loop
+ MOV r9,#1
+ MOV r11,r7
  MOV r4,r6
  MOV r5,r10
  BL modulo
- MOV r1,r3
- LDR r0,=outputA
- BL printf
+ MOV r6,r0 
 
+StartBinExpLoop:
+ CMP r7,#0
+ BEQ EndBinExpLoop
+  B checkOdd
+
+ checkOdd:
+  MOV r3,r7
+  AND r0,r3,#1
+  CMP r0,#0
+  BEQ isEven
+   B isOdd
+  
+ isOdd:
+ #result=(result*c)%n
+  MOV r2,#1
+  MOV r2,r9
+  MUL r2,r9,r6
+  MOV r4,r2
+  MOV r5,r10
+  BL modulo
+  MOV r9,r0
+  #d=d/2
+  MOV r3,r7
+  ASR r0,r3,#1
+  MOV r7,r0
+  #c=(c*c)%n
+  MOV r2,#1
+  MUL r2,r6,r6
+  MOV r4,r2
+  MOV r5,r10
+  BL modulo
+  MOV r6,r0
+  B StartBinExpLoop
+ 
+ isEven:
+ #d=d/2
+  MOV r3,r7
+  ASR r0,r3,#1
+  MOV r7,r0
+ #c=(c*c)%n
+  MOV r2,#1
+  MUL r2,r6,r6
+  MOV r4,r2
+  MOV r5,r10
+  BL modulo
+  MOV r6,r0
+  B StartBinExpLoop
+
+#Print resulting decrypted character
+EndBinExpLoop:
+ MOV r1,r9
+ LDR r0,=outputC
+ BL printf
+ B ContRQuit
+ 
+ #Prompt user to input next ciphertex value for decryption or quit the program
+ ContRQuit:
+ LDR r0,=promptCR
+ BL printf
+ LDR r0,=formatCR
+ LDR r1,=InputCR
+ BL scanf
+ LDR r1,=InputCR
+ LDR r1,[r1]
+ CMP r1,#-1
+ BNE ContDecry
+   B EndDecryptionAlg
+ 
+#Intialize required values before restarting decrpytion if user decides to continue decryption
+ ContDecry:
+ LDR r6,=InputCR
+ LDR r6,[r6]
+ MOV r9,#1
+ MOV r4,r6
+ MOV r5,r10
+ BL modulo
+ MOV r6,r0
+ MOV r7,r11
+ B StartBinExpLoop
+ 
+EndDecryptionAlg:
 #Pop Stack
  LDR lr, [sp, #0]
  ADD sp, sp, #4
  MOV pc, lr
       
 .data
-promptA: .asciz "Input the ascii value of a character from A-Z or a-z: "
-formatA: .asciz "%d"
-InputAscii: .word 0
-outputA: .asciz "Your equivalent character is: %c\n"
+promptC: .asciz "Input the ciphertext(c) value that you want decrypted: "
+formatC: .asciz "%d"
+InputC: .word 0
+outputC: .asciz "%c\n"
+promptCR: .asciz "Input next ciphertext(c) value to decrypt or enter -1 to quit: "
+formatCR: .asciz "%d"
+InputCR: .word 0   
 #End of Decrypt
-
-
-
-
-
-
-
-
-
-
-
-
-
-

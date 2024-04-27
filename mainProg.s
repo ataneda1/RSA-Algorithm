@@ -100,18 +100,10 @@ StartMain:
  #Implement CPubExp to check its valid
   BL CPubExp
   CMP r10,#1
-  BEQ calcPrivExp
+  BEQ PromptRsaAlg
    B checkPubExp
 
- calcPrivExp:
- #Prompt user for integer x needed in formula for calculating private key exponent
-  LDR r0, =promptD
-  BL printf
-  #Read and store input integer x
-  LDR r0, =formatD
-  LDR r1, =numD
-  BL scanf
-
+ PromptRsaAlg:
  #Prompt user to choose if they want to Encrypt or Decrypt a messge
   LDR r0,=promptAlg
   BL printf
@@ -140,7 +132,14 @@ StartMain:
   B EndMain
 
  StartDecryptAlg:
-#Get p,q,x,e values and calculate private exponent and move it to r11 and put n in r10
+#Promt for d value and get p,q,e values from prior input to calculate private exponent and move it to r11 and put n in r10
+ #Prompt user for integer x needed in formula for calculating private key exponent
+  LDR r0, =promptD
+  BL printf
+  #Read and store input integer x
+  LDR r0, =formatD
+  LDR r1, =numD
+  BL scanf
   LDR r4,=numP
   LDR r4,[r4]
   LDR r5,=numQ
@@ -150,7 +149,7 @@ StartMain:
   LDR r8,=numE
   LDR r8,[r8] 
   BL CPrivExp
-  MOV r11,r0
+  #correct d is in r7
   MOV r10,#0
   LDR r4,=numP
   LDR r4,[r4]
@@ -169,8 +168,8 @@ EndMain:
 .data
 promptP: .asciz "Enter a postive prime number that is less than 50 for (P): "
 promptQ: .asciz "Enter a positive prime number that is less than 50 for (Q): "
-promptE: .asciz "Please enter a positve value that is greater than 1 for the public key exponent: "
-promptD: .asciz "Please choose a small positive integer to calcualte the private key exponent: "
+promptE: .asciz "Please enter a positve value that is greater than 1 for the public key exponent (e): "
+promptD: .asciz "Please choose a small positive number for the private key exponent(d): "
 promptAlg: .asciz "To encrypt a message press 3 and to decrypt a message press 4: "
 formatP: .asciz "%d"
 formatQ: .asciz "%d"

@@ -2,7 +2,7 @@
 #Program Name: Encrypt.s
 #Author:Kbrom Ghirmai
 #Date: 04//13/2024
-#Purpose: Test Encrypt function from RsaLib
+#Purpose: Test functionality Encrypt function from RsaLib
 #
 
 .text
@@ -13,7 +13,10 @@ main:
  SUB sp, sp, #4
  STR lr, [sp, #0]
 
-#Call Encrypt Function from RsaLib
+#Put test values for d,c and n and call Encrypt Function from RsaLib
+MOV r7,#29
+MOV r10,#91
+MOV r8,#5
 BL Encrypt
 
 #Pop from stack record
