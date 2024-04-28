@@ -1,59 +1,56 @@
 #
-#Program Name:modulo.s
-#Author:Kbrom Ghirmai
-#Date:4/9/2024
-#Purpose: Find the remainder of dividing the two inputs using modulo function
+# Program Name:modulo.s
+# Author: Anthony Taneda
+# Date:4/9/2024
+# Purpose: Prompts user for integers m, n and prints m (mod n) to test the modulo function
+# Inputs: N/A
+# Outputs: N/A
 #
 
 .text
 .global main
 
 main:
+    # Save return
+    SUB sp, sp, #4
+    STR lr, [sp, #0]
 
- #Push to stack
-  SUB sp, sp, #4
-  STR lr, [sp, #0]
+    # Prompt for any integer m
+    LDR r0, =Prompt1
+    BL printf
+    LDR r0, =format1
+    LDR r1, =Input1
+    BL scanf
 
- #Prompt and read first input number
-  LDR r0, =Prompt1
-  BL printf
-  LDR r0, =format1
-  LDR r1, =Input1
-  BL scanf
+    #Prompt for any integer n
+    LDR r0, =Prompt2
+    BL printf
+    LDR r0, =format2
+    LDR r1, =Input2
+    BL scanf
 
- #Store first input number
-  LDR r4,=Input1
-  LDR r4,[r4]
+    # Save inputs in safe registers
+    LDR r4,=Input1 // m in r4
+    LDR r4,[r4]
+    LDR r5,=Input2 // n in r5
+    LDR r5,[r5]
 
- #Prompt and read second input number
-  LDR r0, =Prompt2
-  BL printf
-  LDR r0, =format2
-  LDR r1, =Input2
-  BL scanf
+    # Call modulo function to get m (mod n) and print result
+    BL modulo // outputs m (mod n) to r3
+    MOV r1,r3 // move result to r1
+    LDR r0, =Output
+    BL printf 
 
- #Save second input in safe register
- LDR r5,=Input2
- LDR r5,[r5]
-
- #Implement gcd function
-  BL modulo
-  
- #Print result
-  MOV r1,r3
-  LDR r0, =Output
-  BL printf 
-
- #Pop to Stack
-  LDR lr, [sp, #0]
-  ADD sp, sp, #4
-  MOV pc, lr
+    # Return
+    LDR lr, [sp, #0]
+    ADD sp, sp, #4
+    MOV pc, lr
   
 .data
-Prompt1: .asciz "Enter the first number for the modulo calculation: "
-format1: .asciz "%d"
-Input1: .word 0,0
-Prompt2: .asciz "Enter the second output for the modulo calculation: "
-format2: .asciz "%d"
-Input2: .word 0,0
-Output: .asciz "The remainder of dividing those two values is: %d\n " 
+    Prompt1: .asciz "Enter the first number for the modulo calculation: "
+    format1: .asciz "%d"
+    Input1: .word 0,0
+    Prompt2: .asciz "Enter the second output for the modulo calculation: "
+    format2: .asciz "%d"
+    Input2: .word 0,0
+    Output: .asciz "The remainder of dividing those two values is: %d\n " 
