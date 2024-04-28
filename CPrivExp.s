@@ -42,8 +42,8 @@ main:
     LDR r4, [r4]
     LDR r5, =numQ // q to r5
     LDR r5, [r5]
-    LDR r8, =inputE // e to r7
-    LDR r8, [r7]  
+    LDR r8, =inputE // e to r8
+    LDR r8, [r8]  
 
     # Call private exponent function and print output
     BL CPrivExp
