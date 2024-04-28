@@ -169,48 +169,41 @@ MOV r6,#1
 
 
 #Function Name:modulo
-#Purpose: Function to calculate the remainder of dividing two values
+#
+# Purpose: Function to calculate the remainder of dividing two values
+#
+# Register Dictionary
+# r4 - Any integer m
+# r5 - Any integer n
+# r0 - The remainder m (mod n)
+# r3 - Duplicate of m (mod n)
+#
 .global modulo
 .text
 
-#
-#Register Dictionary
-#r4-Input dividend value that will be moved into r0 for division
-#r5-Input divisor value that will be moved into r1 for division
-#r3-Holds the remainder after the division
-#r0-Will hold the result at the end of the program
-#
-
 modulo:
+    # Save return
+    SUB sp, sp, #4
+    STR lr, [sp, #0]
 
-#Push to stack
- SUB sp, sp, #4
- STR lr, [sp, #0]
+    # Move m and n to appropriate registers 
+    MOV r0, r4 // m
+    MOV r1, r5 // n
+    
+    # Perform integer division
+    BL __aeabi_idiv // (m // n)
 
-#Get the modulus of two values
-#Get remainder of dividing to numbers
- MOV r0,r4
- MOV r1,r5
- #deal with a value dididng by the same value
- CMP r4,r5
- BEQ setRemainder
-  B contDiv
+    # Recover remainder
+    MUL r0, r0, r5 // (m // n) * n
+    SUB r0, r4, r0 // m - (m // n) * n = m % n
 
- setRemainder:
- MOV r3,#0
- MOV r0,r3
- B EndModulo
+    # Duplicate output to r3
+    MOV r3, r0
 
- contDiv:
- CMP r4,r5
- BL __aeabi_idiv
- MOV r0,r3
-
-EndModulo:
-#Pop to Stack
- LDR lr, [sp, #0]
- ADD sp, sp, #4
- MOV pc, lr
+    # Return
+    LDR lr, [sp, #0]
+    ADD sp, sp, #4
+    MOV pc, lr
 
 .data
 #End of modulo
@@ -304,91 +297,66 @@ output1: .asciz "That is a valid public key exponent\n"
 .text
 
 CPrivExp:
-#register dictionary
-#r4-Hold the value of p that the user chooses
-#r5-holds the value of user input q
-#r6-holds the totient that is calculated using input p and q
-#r7-Hold user input private exponent d
-#r8-Hold user input public exponent value e
+#
+# Purpose: Calculates the modular inverse d of e in modulo phi(n), i.e., de = 1 (mod phi(n))
+#
+# Register Dictionary
+#   r4 - Holds the value of p that the user chooses
+#   r5 - Holds the value of user input q
+#   r6 - Holds the totient phi(n) that is calculated using input p and q
+#   r7 - Outputs private exponent d
+#   r8 - Holds user input public exponent value e
+#   r9 - Temporary variable for determining if d is valid
+#
+    # Save return
+    SUB sp, sp, #8
+    STR lr, [sp, #0]
+    STR r9, [sp, #4]
 
-#Push to stack
- SUB sp, sp, #4
- STR lr, [sp, #0]
+    # Calculate totient and store it in r6
+    MOV r6, #0 // Initialize r6 to 0
+    SUB r4, r4, #1 // r4 = p - 1
+    SUB r5, r5, #1 // r5 = q - 1
+    MUL r6, r4, r5 // r6 = phi(n) = (p - 1)(q - 1)
 
-#Calculate totient and store it in r6
- MOV r6,#0
- SUB r4,r4,#1
- SUB r5,r5,#1
- MUL r6,r4,r5
+    # Find the modular inverse d 
+    MOV r7, #0 // Initialize d to 0
+    B PrivExpLoop // Main loop to check if d is valid
+    
+    PrivExpLoop:
+      # Prepare d for comparison
+      MUL r9, r7, r8 // de
+      SUB r9, r9, #1 // de - 1
+      ADD r9, r9, r6 // de - 1 + phi(n) = de - 1 (mod phi(n))
 
-#Check that input d passes the proof:de=1(mod phi(n))==> modulo(de-1,phi(n))=0
-#Start by checking input d is less than the totien phi(n)
-CheckPrivExpLoop:
- CMP r7,r6
- BGE PrivExpErr
-  B StartCheckPrivExp
+      # Call modulo function to calculate de - 1 mod (phi (n))
+      MOV r4, r9 // r4 = de-1
+      MOV r5, r6 // r5 = phi(n)
+      BL modulo // r0 = de - 1 mod (phi (n))
 
- PrivExpErr:
- #Print error message when input d is greater than totient
- LDR r0,=privErr
- BL printf
- #Get user to input another d value and check that new input
- LDR r0,=promptd
- BL printf
- LDR r0,=formatd
- LDR r1,=numd
- BL scanf
- LDR r7,=numd
- LDR r7,[r7]
- B CheckPrivExpLoop
+      # Determine if current d is modular inverse
+      CMP r0, #0
+      BEQ EndPrivExp // de - 1 = 0 (mod phi(n))  =>  d is the modular inverse
 
- StartCheckPrivExp:
- #check modulo(de-1,phi(n))=0
- MOV r9,#1
- #d*e
- MUL r9,r7,r8
- #de-1
- SUB r9,r9,#1
- MOV r4,r9
- MOV r5,r6
- #modulo(de-1,phi(n))
- BL modulo
- CMP r3,#0
- BNE PrivErr2
-  B EndCheckPrivExpLoop
- 
- PrivErr2:
- LDR r0,=privExpErr2
- BL printf
- LDR r0, =promptd
- BL printf
- LDR r0, =formatd
- LDR r1, =numd
- BL scanf
- LDR r7, =numd
- LDR r7, [r7]
- B CheckPrivExpLoop
-
- EndCheckPrivExpLoop:
- LDR r0,=testval
- BL printf
- B EndPrivExp
-
-EndPrivExp:
-#Pop from OS Stack
- LDR lr, [sp, #0]
- ADD sp, sp, #4
- MOV pc, lr
+      # Current d was not modular inverse, look at next d
+      ADD r7, r7, #1 // d = d + 1
+      B PrivExpLoop
+    
+    # Return
+    EndPrivExp:
+      LDR lr, [sp, #0]
+      LDR r9, [sp, #4]
+      ADD sp, sp, #8
+      MOV pc, lr
 
 .data
-
-privErr: .asciz "That d value is invalid because it's  greater the totient(%d), please input a value that is less than that..."
-promptd: .asciz "Please input a private key exponent d value: "
-formatd: .asciz "%d"
-numd: .word 0
-privExpErr2: .asciz "That d value is invalid please try inputting another d value..."
-testval: .asciz "Congrats is the valid d value\n"
-#End of CPrivExp
+    privErr: .asciz "That d value is invalid because it's  greater the totient(%d), please input a value that is less than that..."
+    promptd: .asciz "Please input a private key exponent d value: "
+    formatd: .asciz "%d"
+    numd: .word 0
+    privExpErr2: .asciz "That d value is invalid please try inputting another d value..."
+    testval: .asciz "Congrats is the valid d value\n"
+    #End of CPrivExp
 
 #Function Name:Encrypt
 #Purpose: Check if input is an alphabetic character and return logical variable as an indicator(1=true,0=false)
