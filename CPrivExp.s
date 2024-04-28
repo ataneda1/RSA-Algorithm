@@ -47,7 +47,7 @@ main:
 
     # Call private exponent function and print output
     BL CPrivExp
-    MOV r1, r0
+    MOV r1, r7
     LDR r0, =output
     BL printf
  
