@@ -1,54 +1,55 @@
 #
-# Program Name:CPrivExp.s
+# Program Name: CPrivExp.s
 # Author:Anthony Taneda
-# Date:3/27/24
-# Purpose: Test the RsaLib function that calcualtes the private exponent d
+# Date: 3/27/24
+# Purpose: Prompts user for integers p, q and prints d where de = 1 (mod phi(n)) to test the CPrivExp function
+#   where e = and phi(n) = (p-1)*(q-1)
+# Inputs: N/A
+# Outputs: N/A
 #
 
 .text
 .global main
 
 main:
-
-    #Push to stack
+    # Save return
     SUB sp, sp, #4
     STR lr, [sp, #0]
 
-    #Prompt and read input p
+    # Prompt for input p
     LDR r0, =PromptP
     BL printf
     LDR r0, =formatP
     LDR r1, =numP
     BL scanf
 
-    #Store p in r4
-    LDR r4,=numP
-    LDR r4,[r4]
-
-    #Prompt and read input q
+    # Prompt and read input q
     LDR r0, =PromptQ
     BL printf
     LDR r0, =formatQ
     LDR r1, =numQ
     BL scanf
-    #Save q in safe register
-    LDR r5,=numQ
-    LDR r5,[r5]
 
-    #Pick public Exp for test 
-    MOV r8,#5
-
-    #Prompt for private exponent d and read value
-    LDR r0,=promptD
+    # Prompt for private exponent e and read value
+    LDR r0, =promptE
     BL printf
-    LDR r0,=formatD
-    LDR r1,=inputD
+    LDR r0, =formatE
+    LDR r1, =inputE
     BL scanf
+    
+    # Move inputs to safe registers
+    LDR r4, =numP // p to r4
+    LDR r4, [r4]
+    LDR r5, =numQ // q to r5
+    LDR r5, [r5]
+    LDR r8, =inputE // e to r7
+    LDR r8, [r7]  
 
-    #Put input d in r7 and implement CPrivExp
-    LDR r7,=inputD
-    LDR r7,[r7]  
+    # Call private exponent function and print output
     BL CPrivExp
+    MOV r1, r0
+    LDR r0, =output
+    BL printf
  
     # Return
     LDR lr, [sp, #0]
@@ -62,6 +63,7 @@ main:
     PromptQ: .asciz "Input a positive prime number that is less than 50 for (q): "
     formatQ: .asciz "%d"
     numQ: .word 0
-    promptD: .asciz "Please input a private key exponent d greater than 0: "
-    formatD: .asciz "%d"
-    inputD: .word 0
+    promptE: .asciz "Please input a public key exponent e greater than 0: "
+    formatE: .asciz "%d"
+    inputE: .word 0
+    output: .asciz "The corresponding private key exponent is %d\n"
