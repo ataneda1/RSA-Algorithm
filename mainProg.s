@@ -133,19 +133,10 @@ StartMain:
 
  StartDecryptAlg:
 #Promt for d value and get p,q,e values from prior input to calculate private exponent and move it to r11 and put n in r10
- #Prompt user for integer x needed in formula for calculating private key exponent
-  LDR r0, =promptD
-  BL printf
-  #Read and store input integer x
-  LDR r0, =formatD
-  LDR r1, =numD
-  BL scanf
   LDR r4,=numP
   LDR r4,[r4]
   LDR r5,=numQ
   LDR r5,[r5]
-  LDR r7,=numD
-  LDR r7,[r7]
   LDR r8,=numE
   LDR r8,[r8] 
   BL CPrivExp
@@ -169,17 +160,14 @@ EndMain:
 promptP: .asciz "Enter a postive prime number that is less than 50 for (P): "
 promptQ: .asciz "Enter a positive prime number that is less than 50 for (Q): "
 promptE: .asciz "Please enter a positve value that is greater than 1 for the public key exponent (e): "
-promptD: .asciz "Please choose a small positive number for the private key exponent(d): "
 promptAlg: .asciz "To encrypt a message press 3 and to decrypt a message press 4: "
 formatP: .asciz "%d"
 formatQ: .asciz "%d"
 formatE: .asciz "%d"
-formatD:.asciz "%d"
 formatAlg: .asciz "%d"
 numP: .word 0
 numQ: .word 0
 numE: .word 0
-numD: .word 0
 numAlg: .word 0
 ErrorP1: .asciz "Sorry the P value you input is greater than 50 so it is invalid, please input a valid P value\n"
 ErrorP2: .asciz "Sorry the P value you input is not a prime number so it is invalid, please input a valid P value\n"
